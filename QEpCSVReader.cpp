@@ -30,7 +30,7 @@ QStringList QEpCSVReader::readLine()
             }
         } else if (c == '\n') {
             appendValue(values);
-            continue;
+            break;
         } else if (c == escapeChar) {
             if (m_escapedValue) {
                 if (m_device->getChar(&cc)) {

@@ -22,9 +22,9 @@ add_library(QEpCSV
 )
 
 target_link_libraries(QEpCSV PRIVATE Qt5::Core)
-
 target_compile_definitions(QEpCSV PRIVATE QEPCSV_LIBRARY)
 
 add_executable(Test_QEpCSV Test_QEpCSV.h)
 target_link_libraries(Test_QEpCSV Qt5::Test QEpCSV)
+target_compile_definitions(Test_QEpCSV PRIVATE TEST_DATA_FILENAME="${CMAKE_SOURCE_DIR}/test.csv")
 add_test(Test_QEpCSV Test_QEpCSV)

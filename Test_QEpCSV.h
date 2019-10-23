@@ -5,6 +5,10 @@
 #include <QtCore>
 #include <QEpCSV>
 
+#if not defined TEST_DATA_FILENAME
+    #define TEST_DATA_FILENAME ""
+#endif
+
 /**
  * @brief The Test_QEpCSV class
  */
@@ -61,6 +65,21 @@ private slots:
         QCOMPARE(values.at(0), QString("Test \"Value;\";"));
         QCOMPARE(values.at(1), QString("100.00"));
         QCOMPARE(values.at(2), QString("Socks"));
+    }
+
+    void testFileParsing() {
+        const auto testFilename = QString(TEST_DATA_FILENAME);
+        QVERIFY2(!testFilename.isEmpty(), "Test data filename is NOT defined!");
+        QFile file(testFilename);
+        QEpCSVReader csv;
+        auto lines = QVector<QStringList>();
+        QVERIFY(file.open(QIODevice::ReadOnly | QIODevice::Text));
+        csv.setDevice(&file);
+        for(auto values = csv.readLine(); !values.empty(); values = csv.readLine()) {
+            QCOMPARE(values.size(), 4);
+            lines.push_back(values);
+        }
+        QCOMPARE(lines.size(), 2);
     }
 
 };
