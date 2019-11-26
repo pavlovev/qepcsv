@@ -6,37 +6,54 @@ QEpCSVReader::QEpCSVReader(QObject *parent): QObject(parent)
 
 QIODevice *QEpCSVReader::device() const
 {
-    return m_device;
+    return m_in.device();
 }
 
 void QEpCSVReader::setDevice(QIODevice *device)
 {
-    m_device = device;
+    m_in.setDevice(device);
+}
+
+void QEpCSVReader::setCodec(QTextCodec *codec)
+{
+    m_in.setCodec(codec);
 }
 
 QStringList QEpCSVReader::readLine()
 {
-
-    constexpr char escapeChar = '"';
-    constexpr char CR = '\r';
+    constexpr QChar escapeChar = '"';
+    constexpr QChar CR = '\r';
+    constexpr QChar LF = '\n';
 
     QStringList values;
-    char c,cc;
-    while (m_device->getChar(&c)) {
+    if (m_in.atEnd()) {
+        return values;
+    }
+
+    auto lineData = m_in.readLine();
+    lineData.push_back(LF);
+
+    QChar c,cc;
+    QTextStream lineStream(&lineData);
+    while (!lineStream.atEnd()) {
+        lineStream >> c;
         if (c == m_separator) {
             if (!m_escapedValue) {
                 appendValue(values);
                 continue;
             }
-        } else if (c == '\n') {
+
+        } else if (c == LF) {
             appendValue(values);
             break;
+
         } else if (c == escapeChar) {
             if (m_escapedValue) {
-                if (m_device->getChar(&cc)) {
+                if (!lineStream.atEnd()) {
+                    lineStream >> cc;
                     if (cc != escapeChar) {
                         m_escapedValue = false;
-                        m_device->ungetChar(cc);
+                        lineStream.seek(lineStream.pos() - 1);
                         continue;
                     }
                 } else {
@@ -47,34 +64,36 @@ QStringList QEpCSVReader::readLine()
                 m_escapedValue = true;
                 continue;
             }
+
         } else if (c == CR) {
             continue; // Allways skip this char.
         }
         push(c);
     }
+    if (!m_valueBuffer.isEmpty()) {
+        appendValue(values);
+    }
     return values;
 }
 
-void QEpCSVReader::push(char c)
+void QEpCSVReader::push(QChar c)
 {
     m_valueBuffer.push_back(c);
-    m_state = Value;
 }
 
 void QEpCSVReader::appendValue(QStringList &values)
 {
-    values.push_back(QString::fromUtf8(m_valueBuffer));
+    values.push_back(m_valueBuffer);
     m_valueBuffer.clear();
     m_escapedValue = false;
-    m_state = Start;
 }
 
-char QEpCSVReader::separator() const
+QChar QEpCSVReader::separator() const
 {
     return m_separator;
 }
 
-void QEpCSVReader::setSeparator(char separator)
+void QEpCSVReader::setSeparator(QChar separator)
 {
     m_separator = separator;
 }
