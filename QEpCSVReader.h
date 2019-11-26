@@ -11,15 +11,17 @@ class QEPCSV_EXPORT QEpCSVReader: public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QIODevice* device READ device  WRITE setDevice)
-    Q_PROPERTY(char separator READ separator WRITE setSeparator)
+    Q_PROPERTY(QChar separator READ separator WRITE setSeparator)
 public:
     explicit QEpCSVReader(QObject *parent = nullptr);
 
     QIODevice *device() const;
     void setDevice(QIODevice *device);
 
-    char separator() const;
-    void setSeparator(char separator);
+    void setCodec(QTextCodec *codec);
+
+    QChar separator() const;
+    void setSeparator(QChar separator);
 
     /**
      * @brief Read a line (row) and parse it.
@@ -29,7 +31,7 @@ public:
 
 private:
 
-    void push(char c);
+    void push(QChar c);
     void appendValue(QStringList &values);
 
     enum State{
@@ -38,11 +40,11 @@ private:
     };
 
     QIODevice *m_device = nullptr;
+    QTextStream m_in;
 
-    State m_state = Start;
     bool m_escapedValue = false;
-    char m_separator = ';';
-    QByteArray m_valueBuffer;
+    QChar m_separator = ';';
+    QString m_valueBuffer;
 };
 
 #endif // QEPCSVREADER_H
